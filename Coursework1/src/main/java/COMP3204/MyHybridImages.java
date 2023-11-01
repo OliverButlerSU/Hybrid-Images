@@ -2,6 +2,10 @@ package COMP3204;
 
 import static cern.clhep.PhysicalConstants.pi;
 
+import java.io.File;
+import java.io.IOException;
+import org.openimaj.image.DisplayUtilities;
+import org.openimaj.image.ImageUtilities;
 import org.openimaj.image.MBFImage;
 
 public class MyHybridImages {
@@ -18,14 +22,16 @@ public class MyHybridImages {
      */
     public static MBFImage makeHybrid(
             MBFImage lowImage, float lowSigma, MBFImage highImage, float highSigma) {
-        // implement your hybrid images functionality here.
-        // Your submitted code must contain this method, but you can add
-        // additional static methods or implement the functionality through
-        // instance methods on the `MyHybridImages` class of which you can create
-        // an instance of here if you so wish.
-        // Note that the input images are expected to have the same size, and the output
-        // image will also have the same height & width as the inputs.
-        return lowImage;
+        float[][] lowImageKernel = makeGaussianKernel(lowSigma);
+        float[][] highImageKernel = makeGaussianKernel(highSigma);
+
+        MyConvolution lowConvolution = new MyConvolution(lowImageKernel);
+        MyConvolution highConvolution = new MyConvolution(highImageKernel);
+
+        MBFImage lowPassFilter = lowImage.process(lowConvolution);
+        MBFImage highPassFilter = highImage.process(highConvolution);
+
+        return lowPassFilter.add(highImage.subtract(highPassFilter));
     }
 
     public static float[][] makeGaussianKernel(float sigma) {
@@ -45,7 +51,6 @@ public class MyHybridImages {
         for(int y = 0; y<kernelSize; y++){
             for(int x = 0; x < kernelSize; x++){
                 kernel[y][x] = calculateGaussianValue(x-xOffset, y-yOffset, sigma);
-                System.out.println(kernel[y][x]);
             }
         }
         return kernel;
@@ -55,7 +60,11 @@ public class MyHybridImages {
         return (float) (1 / (2 * pi * sigma * sigma) * Math.exp(- (x*x + y*y)/(2*sigma*sigma)));
     }
 
-    public static void main(String[] args){
-        makeGaussianKernel(1f);
+    public static void main(String[] args) throws IOException {
+        MBFImage highimage = ImageUtilities.readMBF(new File("hybrid-images/data/cat.bmp"));
+        MBFImage lowimage = ImageUtilities.readMBF(new File("hybrid-images/data/dog.bmp"));
+
+        MBFImage hybrid = makeHybrid(lowimage, 4, highimage, 12);
+        DisplayUtilities.display(hybrid);
     }
 }

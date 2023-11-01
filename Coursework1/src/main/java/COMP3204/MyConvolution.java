@@ -49,8 +49,6 @@ public class MyConvolution implements SinglebandImageProcessor<Float, FImage> {
     @Override
     public void processImage(FImage image) {
         FImage paddedImage = padImage(image);
-        System.out.println(paddedImage.width + " " + paddedImage.height);
-        System.out.println(image.width + " " + image.height);
 
         for (int y=0; y<image.getHeight(); y++) {
             for(int x=0; x<image.getWidth(); x++) {
