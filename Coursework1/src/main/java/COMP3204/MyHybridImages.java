@@ -2,7 +2,9 @@ package COMP3204;
 
 import static cern.clhep.PhysicalConstants.pi;
 
+import org.openimaj.image.FImage;
 import org.openimaj.image.MBFImage;
+import org.openimaj.image.processing.resize.ResizeProcessor;
 
 public class MyHybridImages {
 
@@ -27,13 +29,32 @@ public class MyHybridImages {
         MyConvolution lowConvolution = new MyConvolution(lowImageKernel);
         MyConvolution highConvolution = new MyConvolution(highImageKernel);
 
+        System.out.println(lowImage.getWidth() + " " + lowImage.getHeight());
+        System.out.println(highImage.getWidth() + " " + highImage.getHeight());
+
+        // Ensure pictures are both same size
+        if (lowImage.getWidth() != highImage.getWidth() || lowImage.getHeight() != highImage.getHeight()) {
+            int lowPixelCount = lowImage.getHeight() * lowImage.getWidth();
+            int highPixelCount = highImage.getHeight() * highImage.getWidth();
+
+            // Resize smaller image to be same dimensions as larger image
+            if (lowPixelCount < highPixelCount) {
+                lowImage = lowImage.process(new ResizeProcessor(highImage.getWidth(), highImage.getHeight()));
+                lowImage = lowImage.extractCenter(highImage.getWidth(), highImage.getHeight());
+            } else {
+                highImage = highImage.process(new ResizeProcessor(lowImage.getWidth(), lowImage.getHeight()));
+                highImage = highImage.extractCenter(lowImage.getWidth(), lowImage.getHeight());
+            }
+        }
+
         // Run the both low pass frequency filters on the images
         MBFImage lowPassFilter = lowImage.process(lowConvolution);
         MBFImage highPassFilter = highImage.process(highConvolution);
 
         // Return the final image being the sum of the low and high pass filters
-        // It was said in the teams chat you can use the .add and .subtract function
-        // so I'm assuming im allowed to do this?
+        // It was said in the teams chat you can use the .add and .subtract function,
+        // so I'm assuming im allowed to do this? If I get marks reduced because I used these
+        // functions I will be very sad
         return lowPassFilter.add(highImage.subtract(highPassFilter));
     }
 
@@ -73,7 +94,6 @@ public class MyHybridImages {
      * @return Gaussian value
      */
     private static float calculateGaussianValue(int x, int y, float sigma) {
-        return (float)
-                (1 / (2 * pi * sigma * sigma) * Math.exp(-(x * x + y * y) / (2 * sigma * sigma)));
+        return (float) (1 / (2 * pi * sigma * sigma) * Math.exp(-(x * x + y * y) / (2 * sigma * sigma)));
     }
 }
